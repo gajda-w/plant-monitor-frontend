@@ -11,12 +11,23 @@ export const usePollingSensors = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const sensors = await fetch(apiUrl + "sensors").then((res) =>
-          res.json()
-        );
+        const response = await fetch(apiUrl + "sensors", {
+          headers: {
+            "ngrok-skip-browser-warning": "69420",
+            // "Access-Control-Allow-Origin": "http://localhost:3000",
+            // authority: "3f3f-87-207-178-219.ngrok-free.app",
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error(`Error: ${response.status}`);
+        }
+
+        const data = await response.json();
+
         setSensors({
-          humidity: sensors.humidity,
-          temperature: sensors.temperature,
+          humidity: data.humidity,
+          temperature: data.temperature,
         });
 
         setLastUpdate(new Date().toLocaleTimeString());
