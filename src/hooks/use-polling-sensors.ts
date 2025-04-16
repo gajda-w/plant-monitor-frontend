@@ -1,21 +1,18 @@
-import { apiUrl } from "@/consts";
-import { useEffect, useState } from "react";
+import { apiUrl } from '@/consts';
+import { useEffect, useState } from 'react';
 
 export const usePollingSensors = () => {
-  const [sensors, setSensors] = useState<{
-    temperature: string;
-    humidity: string;
-  }>({ humidity: "0", temperature: "0" });
-  const [lastUpdate, setLastUpdate] = useState<string>("");
+  const [data, setData] = useState<
+    { time: string; temperature: number; humidity: number }[]
+  >([]);
+  const [lastUpdate, setLastUpdate] = useState<string>('');
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch(apiUrl + "sensors", {
+        const response = await fetch(apiUrl + 'sensors', {
           headers: {
-            "ngrok-skip-browser-warning": "69420",
-            // "Access-Control-Allow-Origin": "http://localhost:3000",
-            // authority: "3f3f-87-207-178-219.ngrok-free.app",
+            'ngrok-skip-browser-warning': '69420',
           },
         });
 
@@ -23,24 +20,29 @@ export const usePollingSensors = () => {
           throw new Error(`Error: ${response.status}`);
         }
 
-        const data = await response.json();
+        const result = await response.json();
+        const now = new Date();
 
-        setSensors({
-          humidity: data.humidity,
-          temperature: data.temperature,
-        });
+        setData((prev) => [
+          ...prev.slice(-1000), // Keep only the last 1000 entries
+          {
+            time: now.toLocaleTimeString(),
+            temperature: parseFloat(result.temperature),
+            humidity: parseFloat(result.humidity),
+          },
+        ]);
 
-        setLastUpdate(new Date().toLocaleTimeString());
+        setLastUpdate(now.toLocaleTimeString());
       } catch (error) {
         console.error(error);
       }
     };
 
     fetchData();
-    const interval = setInterval(fetchData, 5000);
+    const interval = setInterval(fetchData, 10000); // Fetch every 10 seconds
 
     return () => clearInterval(interval);
   }, []);
 
-  return { sensors, lastUpdate };
+  return { data, lastUpdate };
 };
