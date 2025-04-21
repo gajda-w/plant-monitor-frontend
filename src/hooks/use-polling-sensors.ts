@@ -5,12 +5,20 @@ export const usePollingSensors = () => {
   const [data, setData] = useState<
     { time: string; temperature: number; humidity: number }[]
   >([]);
+  const [status, setStatus] = useState<null | {
+    sensors: { temperature: string; humidity: string };
+    isLightOn: boolean;
+    isFanOn: boolean;
+    isHumidifierOn: boolean;
+    lightStartHour: number;
+    lightEndHour: number;
+  }>(null);
   const [lastUpdate, setLastUpdate] = useState<string>('');
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch(apiUrl + 'sensors', {
+        const response = await fetch(apiUrl + 'status', {
           headers: {
             'ngrok-skip-browser-warning': '69420',
           },
@@ -23,12 +31,14 @@ export const usePollingSensors = () => {
         const result = await response.json();
         const now = new Date();
 
+        setStatus(result);
+
         setData((prev) => [
-          ...prev.slice(-1000), // Keep only the last 1000 entries
+          ...prev.slice(-1000),
           {
             time: now.toLocaleTimeString(),
-            temperature: parseFloat(result.temperature),
-            humidity: parseFloat(result.humidity),
+            temperature: parseFloat(result.sensors.temperature),
+            humidity: parseFloat(result.sensors.humidity),
           },
         ]);
 
@@ -39,10 +49,10 @@ export const usePollingSensors = () => {
     };
 
     fetchData();
-    const interval = setInterval(fetchData, 10000); // Fetch every 10 seconds
+    const interval = setInterval(fetchData, 10000);
 
     return () => clearInterval(interval);
   }, []);
 
-  return { data, lastUpdate };
+  return { data, status, lastUpdate };
 };
